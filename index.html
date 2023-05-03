@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ask A Q</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vuetify@2.6.3/dist/vuetify.min.css" />
+</head>
+<body>
+    <div id="app">
+        <v-app>
+            <v-content>
+                <v-container fluid fill-height>
+                    <v-row align="center" justify="center">
+                        <v-col cols="12" sm="8" md="6">
+                            <v-card class="pa-4" color="#424242" dark>
+                                <div class="text-center">
+                                    <h1 class="white--text mb-4">Ask A Q</h1>
+                                    <p class="white--text mb-6">
+                                        Ask a yes/no question:
+                                        <input class="pa-2" v-model="question" />
+                                    </p>
+                                    <p class="white--text">
+                                        {{ answer }}
+                                    </p>
+                                    <img v-if="image" class="mt-6" v-bind:src="image" />
+                                </div>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-content>
+        </v-app>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@0.12.0/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.13.1/lodash.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.6.3/dist/vuetify.min.js"></script>
+    <script>
+        var app = new Vue({
+                el: '#app',
+                vuetify: new Vuetify(),
+                data: {
+                    question: '',
+                    answer: 'I cannot give you an answer until you ask a question!',
+                    image: ''
+                },
+                watch: {
+                    // whenever question changes. this function will run
+                    question: function (newQuestion, oldQuestion) {
+                        this.answer = 'Waiting for you to stop typing...'
+                        this.image = ''
+                        this.debouncedGetAnswer()
+                    }
+                },
+                created: function () {
+                    // _.debounce is a function provided by lodash to limit how
+                    // often a particularly expensive operaction can be run.
+                    // In this case, we want to limit how often we acces
+                    // yesno.wtf/api, waiting until the user has complety
+                    // finished typing before making the ajax request. To learn
+                    // more about the _.debounce function (and its cousin
+                    // _.thorttle), visit: https://lodash.com/docs#debounce
+                    this.debouncedGetAnswer = _.debounce(this.getAnswer, 500)
+                },
+                methods: {
+                    getAnswer: function () {
+                        if (this.question.indexOf('?') === -1) {
+                            this.answer = 'Questions usually contain a quiestion mark. ;)'
+                            this.image = ''
+                            return;
+                        }
+                        this.answer = 'Thinking...'
+                        var vm = this
+                        axios.get('https://yesno.wtf/api')
+                            .then(function (response) {
+                                vm.answer = _.capitalize(response.data.answer)
+                                vm.image = response.data.image
+                            })
+                            .catch(function (error) {
+                                vm.answer = 'Error! Could not reach the API' + error
+                            })
+                    }
+                }
+            }) 
+    </script>
+</body>
+</html>
